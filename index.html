@@ -1,93 +1,38 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atendimento Coordenação</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        :root { --p: #4f46e5; --bg: #0f172a; --card: #1e293b; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
-        .card { background: var(--card); width: 90%; max-width: 400px; padding: 2.5rem; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
-        h1 { font-size: 1.5rem; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2rem; }
-        input, select { width: 100%; padding: 14px; margin-bottom: 1rem; background: #334155; border: 1px solid #475569; border-radius: 12px; color: white; font-size: 1rem; box-sizing: border-box; }
-        .pref-container { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; background: #2d3a4f; padding: 10px; border-radius: 10px; cursor: pointer; }
-        button { width: 100%; padding: 16px; background: var(--p); color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-        .senha-box { font-size: 3.5rem; font-weight: 800; color: #818cf8; margin: 1.5rem 0; }
-        .estrela { font-size: 2rem; cursor: pointer; color: #475569; transition: 0.2s; }
-        .estrela.active { color: #facc15; }
-        #tela-senha, #tela-avaliacao { display: none; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div id="tela-cadastro">
-            <h1>Atendimento Coordenação</h1>
-            <input type="text" id="nome" placeholder="Nome Completo">
-            <input type="text" id="cpf" placeholder="CPF">
-            <select id="curso">
-                <option value="">Selecione o curso</option>
-                <option value="PSI">Psicologia</option><option value="MED">Medicina</option>
-                <option value="DIR">Direito</option><option value="ADM">Administração</option>
-                <option value="ARQ">Arquitetura</option><option value="PUB">Publicidade</option>
-                <option value="ENG">Engenharia</option><option value="CON">Contabilidade</option>
-                <option value="COM">Ciências da computação</option><option value="FIS">Fisioterapia</option>
-                <option value="NUT">Nutrição</option><option value="OUT">Outros</option>
-            </select>
-            <div class="pref-container" onclick="document.getElementById('pref').click()">
-                <input type="checkbox" id="pref"> <span>Atendimento Preferencial</span>
-            </div>
-            <button onclick="gerarSenha()">GERAR SENHA</button>
-        </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        <div id="tela-senha">
-            <h2 id="msg-status">Aguardando...</h2>
-            <div class="senha-box" id="disp-senha">---</div>
-            <p id="msg-alerta" style="color:#94a3b8">Você receberá um aviso aqui quando for chamado.</p>
-        </div>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCMwHzsfQZIHsEqKlkIpQNTbZxCVYhFoZ8",
+        authDomain: "fila-cord.firebaseapp.com",
+        projectId: "fila-cord",
+        storageBucket: "fila-cord.firebasestorage.app",
+        messagingSenderId: "249621709749",
+        appId: "1:249621709749:web:18b6486f2095f95f29cffc"
+    };
 
-        <div id="tela-avaliacao">
-            <h2>Como foi seu atendimento?</h2>
-            <div id="estrelas" style="margin-bottom: 1rem;">
-                <span class="estrela" onclick="setRate(1)">★</span><span class="estrela" onclick="setRate(2)">★</span><span class="estrela" onclick="setRate(3)">★</span><span class="estrela" onclick="setRate(4)">★</span><span class="estrela" onclick="setRate(5)">★</span>
-            </div>
-            <input type="text" id="obs" placeholder="Observação (opcional)">
-            <button onclick="enviarAvaliacao()">ENVIAR AVALIAÇÃO</button>
-        </div>
-    </div>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    let currentId = null;
+    let rating = 0;
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    window.gerarSenha = async () => {
+        const nome = document.getElementById('nome').value;
+        const cpf = document.getElementById('cpf').value;
+        const cursoEl = document.getElementById('curso');
+        const cursoNome = cursoEl.options[cursoEl.selectedIndex].text; // Pega o nome legível
+        const cursoSigla = cursoEl.value;
+        const pref = document.getElementById('pref').checked;
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCMwHzsfQZIHsEqKlkIpQNTbZxCVYhFoZ8",
-            authDomain: "fila-cord.firebaseapp.com",
-            projectId: "fila-cord",
-            storageBucket: "fila-cord.firebasestorage.app",
-            messagingSenderId: "249621709749",
-            appId: "1:249621709749:web:18b6486f2095f95f29cffc"
-        };
+        if(!nome || !cursoSigla || !cpf) return alert("Preencha os campos!");
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        let currentId = null;
-        let rating = 0;
+        const prefixo = pref ? "PREF" : cursoSigla;
+        const num = Math.floor(100 + Math.random() * 900);
+        const senha = `${prefixo}${num}`;
 
-        window.gerarSenha = async () => {
-            const nome = document.getElementById('nome').value;
-            const cpf = document.getElementById('cpf').value;
-            const curso = document.getElementById('curso').value;
-            const pref = document.getElementById('pref').checked;
-
-            if(!nome || !curso || !cpf) return alert("Preencha os campos!");
-
-            const prefixo = pref ? "PREF" : curso;
-            const num = Math.floor(1000 + Math.random() * 9000);
-            const senha = `${prefixo}${num}`;
-
+        try {
             const docRef = await addDoc(collection(db, "fila"), {
-                nome, cpf, curso, senha, pref, 
+                nome, cpf, curso: cursoNome, senha, pref, 
                 status: "ESPERA", hora: serverTimestamp()
             });
 
@@ -96,44 +41,51 @@
             document.getElementById('tela-senha').style.display = 'block';
             document.getElementById('disp-senha').innerText = senha;
 
-            // Escutar mudanças no status (Notificação)
+            // ESCUTA ATIVA: Percebe chamadas e finalizações
             onSnapshot(doc(db, "fila", currentId), (snap) => {
+                // Se o aluno foi deletado da fila (atendente finalizou)
                 if(!snap.exists()) {
-                    // Se o doc sumiu, é porque foi finalizado
                     document.getElementById('tela-senha').style.display = 'none';
                     document.getElementById('tela-avaliacao').style.display = 'block';
                     return;
                 }
-                if(snap.data().status === "CHAMANDO") {
-                    document.getElementById('msg-status').innerText = "SUA VEZ!";
+                
+                const data = snap.data();
+                if(data.status === "CHAMANDO") {
+                    document.getElementById('msg-status').innerText = "SUA VEZ! COMPAREÇA AO GUICHÊ";
                     document.getElementById('msg-status').style.color = "#10b981";
-                    if ("Notification" in window && Notification.permission === "granted") {
+                    
+                    // Tenta vibrar o celular e emitir som se o navegador permitir
+                    window.navigator.vibrate?.([200, 100, 200]);
+                    
+                    if (Notification.permission === "granted") {
                         new Notification("Sua vez!", { body: `Senha ${senha}, compareça agora.` });
+                    } else {
+                        alert("SUA VEZ! Senha: " + senha);
                     }
                 }
             });
-        };
+        } catch(e) { alert("Erro ao conectar ao banco."); }
+    };
 
-        window.setRate = (n) => {
-            rating = n;
-            document.querySelectorAll('.estrela').forEach((el, i) => {
-                el.classList.toggle('active', i < n);
-            });
-        }
+    window.setRate = (n) => {
+        rating = n;
+        document.querySelectorAll('.estrela').forEach((el, i) => {
+            el.classList.toggle('active', i < n);
+        });
+    }
 
-        window.enviarAvaliacao = async () => {
-            await addDoc(collection(db, "avaliacoes"), {
-                atendimentoId: currentId,
-                estrelas: rating,
-                obs: document.getElementById('obs').value,
-                data: serverTimestamp()
-            });
-            alert("Obrigado pela avaliação!");
-            location.reload();
-        }
+    window.enviarAvaliacao = async () => {
+        if(rating === 0) return alert("Por favor, selecione as estrelas.");
+        await addDoc(collection(db, "avaliacoes"), {
+            estrelas: rating,
+            obs: document.getElementById('obs').value,
+            data: serverTimestamp()
+        });
+        alert("Obrigado pela avaliação!");
+        location.reload();
+    }
 
-        Notification.requestPermission();
-    </script>
-</body>
-</html>
-
+    // Pede permissão para notificar assim que carrega
+    if ("Notification" in window) { Notification.requestPermission(); }
+</script>
