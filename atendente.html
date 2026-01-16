@@ -1,101 +1,3 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Atendimento Coordenação</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root { --primary: #4f46e5; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f8fafc; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; color: #1e293b; }
-        
-        /* Layout */
-        .wrapper { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
-        
-        /* Sidebar */
-        aside { background: white; border-right: 1px solid #e2e8f0; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; }
-        .logo { font-size: 1.25rem; font-weight: 800; color: var(--primary); border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; }
-        
-        /* Stats Widgets */
-        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background: white; padding: 1.5rem; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
-        .stat-card small { color: #64748b; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
-        .stat-card .value { font-size: 1.75rem; font-weight: 800; margin-top: 0.5rem; display: block; }
-
-        /* Queue List */
-        .queue-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .queue-list { display: grid; gap: 1rem; }
-        .student-card { background: white; padding: 1.25rem; border-radius: 16px; border: 1px solid #e2e8f0; display: grid; grid-template-columns: 80px 1fr 180px 220px; align-items: center; transition: all 0.2s; }
-        .student-card:hover { border-color: var(--primary); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        .student-card.calling { border: 2px solid var(--success); background: #f0fdf4; animation: pulse 2s infinite; }
-        
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
-
-        /* Badges & Buttons */
-        .badge { padding: 4px 10px; border-radius: 99px; font-size: 0.7rem; font-weight: 700; }
-        .badge-pref { background: #fee2e2; color: #991b1b; }
-        .badge-course { background: #e0e7ff; color: #3730a3; }
-        
-        .btn { padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 8px; justify-content: center; }
-        .btn-call { background: var(--primary); color: white; }
-        .btn-finish { background: var(--success); color: white; }
-        .btn-excel { background: #15803d; color: white; width: 100%; margin-top: auto; }
-        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-
-        main { padding: 2rem 3rem; }
-    </style>
-</head>
-<body>
-
-<div class="wrapper">
-    <aside>
-        <div class="logo">📍 Coordenação</div>
-        
-        <nav>
-            <div style="margin-bottom: 1rem;">
-                <label style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">FILTRAR CURSO</label>
-                <select id="filtroCurso" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; margin-top: 0.5rem;" onchange="renderizar()">
-                    <option value="Todos">Todos os Cursos</option>
-                    <option>Psicologia</option><option>Medicina</option><option>Direito</option>
-                    <option>Administração</option><option>Arquitetura</option><option>Publicidade</option>
-                    <option>Engenharia</option><option>Contabilidade</option><option>Ciências da computação</option>
-                    <option>Fisioterapia</option><option>Nutrição</option><option>Outros</option>
-                </select>
-            </div>
-        </nav>
-
-        <button class="btn btn-excel" onclick="exportarRelatorio()">
-            📊 Exportar Excel
-        </button>
-    </aside>
-
-    <main>
-        <div class="stats-container">
-            <div class="stat-card">
-                <small>Em Espera</small>
-                <span class="value" id="count-espera">0</span>
-            </div>
-            <div class="stat-box stat-card">
-                <small>Média de Espera</small>
-                <span class="value" style="color: var(--warning)">15 min</span>
-            </div>
-            <div class="stat-card">
-                <small>Status do Sistema</small>
-                <span class="value" style="color: var(--success); font-size: 1rem;">● Online</span>
-            </div>
-        </div>
-
-        <div class="queue-header">
-            <h2 style="margin: 0;">Fila de Atendimento</h2>
-            <span id="current-date" style="color: #64748b; font-weight: 600;"></span>
-        </div>
-
-        <div id="lista-fila" class="queue-list">
-            </div>
-    </main>
-</div>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -113,9 +15,6 @@
     const db = getFirestore(app);
     let filaCompleta = [];
 
-    document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-
-    // Escuta em tempo real
     onSnapshot(query(collection(db, "fila"), orderBy("hora", "asc")), (snap) => {
         filaCompleta = snap.docs.map(d => ({id: d.id, ...d.data()}));
         renderizar();
@@ -123,30 +22,33 @@
 
     window.renderizar = () => {
         const container = document.getElementById('lista-fila');
-        const filtro = document.getElementById('filtroCurso').value;
+        const filtroSelect = document.getElementById('filtroCurso');
+        const filtroTexto = filtroSelect.options[filtroSelect.selectedIndex].text; // Pega o texto exato
         
-        const filtrados = filtro === "Todos" ? filaCompleta : filaCompleta.filter(a => a.curso === filtro || (a.curso.includes(filtro)));
+        // Filtra comparando o nome do curso exato
+        const filtrados = (filtroSelect.value === "Todos") 
+            ? filaCompleta 
+            : filaCompleta.filter(a => a.curso === filtroTexto);
         
         document.getElementById('count-espera').innerText = filtrados.length;
         
         container.innerHTML = filtrados.map(aluno => `
             <div class="student-card ${aluno.status === 'CHAMANDO' ? 'calling' : ''}">
-                <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary);">${aluno.senha}</div>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #4f46e5;">${aluno.senha}</div>
                 <div>
-                    <div style="font-weight: 700; font-size: 1.1rem;">${aluno.nome}</div>
-                    <div style="display: flex; gap: 8px; margin-top: 4px;">
+                    <div style="font-weight: 700;">${aluno.nome}</div>
+                    <div style="display: flex; gap: 8px;">
                         <span class="badge badge-course">${aluno.curso}</span>
                         ${aluno.pref ? '<span class="badge badge-pref">PREFERENCIAL</span>' : ''}
                     </div>
                 </div>
                 <div style="color: #64748b; font-size: 0.85rem;">
-                    <b>CPF:</b> ${aluno.cpf}<br>
-                    <b>Chegada:</b> ${aluno.hora?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || '--:--'}
+                    <b>CPF:</b> ${aluno.cpf}
                 </div>
                 <div style="display: flex; justify-content: flex-end;">
                     ${aluno.status !== 'CHAMANDO' 
                         ? `<button class="btn btn-call" onclick="chamar('${aluno.id}', '${aluno.nome}')">🔔 CHAMAR</button>`
-                        : `<button class="btn btn-finish" onclick="finalizar('${aluno.id}')">✅ FINALIZAR</button>`
+                        : `<button class="btn btn-finish" onclick="finalizarAtendimento('${aluno.id}')">✅ FINALIZAR</button>`
                     }
                 </div>
             </div>
@@ -155,31 +57,27 @@
 
     window.chamar = async (id, nome) => {
         await updateDoc(doc(db, "fila", id), { status: 'CHAMANDO' });
+        // Som e Voz
         const voz = new SpeechSynthesisUtterance(`Próximo atendimento: ${nome}`);
-        voz.lang = 'pt-BR';
         window.speechSynthesis.speak(voz);
     };
 
-    window.finalizar = async (id) => {
-        if(confirm("Deseja encerrar este atendimento? O aluno será redirecionado para a avaliação.")) {
-            await deleteDoc(doc(db, "fila", id));
-        }
+    window.finalizarAtendimento = async (id) => {
+        // Ao deletar aqui, o onSnapshot no index.html do ALUNO vai disparar a tela de avaliação
+        await deleteDoc(doc(db, "fila", id));
     };
 
+    // Exportar Excel (mesma lógica anterior)
     window.exportarRelatorio = async () => {
         const avalSnap = await getDocs(collection(db, "avaliacoes"));
         const data = avalSnap.docs.map(d => ({
             Data: d.data().data?.toDate().toLocaleString() || 'N/A',
-            Nota: d.data().estrelas + " Estrelas",
-            Comentario: d.data().obs || 'Sem comentário'
+            Estrelas: d.data().estrelas,
+            Comentario: d.data().obs || ''
         }));
-
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Avaliações");
-        XLSX.writeFile(wb, "Relatorio_Atendimento_Coord.xlsx");
+        XLSX.writeFile(wb, "Relatorio_Fila.xlsx");
     };
 </script>
-
-</body>
-</html>
